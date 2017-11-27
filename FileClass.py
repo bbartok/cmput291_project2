@@ -28,11 +28,18 @@ class CreateTerms:
         endPro = re.findall(r'<inproceedings key="(.*?)"', line)
         title = re.findall(r'<title>(.*?)</title>', line)
         newTitle = ''
+        newList = []
+        for i in title:
+            newList.append(re.sub(r'[^0-9a-zA-Z_]',' ', i))
+                
+                            
 
-        for x in title:
+        for x in newList:
             for y in x.split(' '):
                 newTitle = 't-'
-                newTitle += re.sub(r'[^a-zA-Z_]', '', y).lower()
+                newTitle += re.sub(r'[^0-9a-zA-Z_]', '', y).lower()
+                if len(newTitle) < 5:
+                    continue
                 newTitle += ':'
                 try:
                     newTitle += endArt[0]
@@ -51,8 +58,11 @@ class CreateTerms:
         
         for x in author:
             for y in x.split(' '):
+                
                 newAuthor = 'a-'
-                newAuthor += re.sub(r'[^a-zA-Z_]', '', y).lower()
+                newAuthor += re.sub(r'[^0-9a-zA-Z_]', '', y).lower()
+                if len(newAuthor) < 5:
+                    continue
                 newAuthor += ':'
                 try:
                     newAuthor += endArt[0]
@@ -74,7 +84,9 @@ class CreateTerms:
         for x in other:
             for y in x.split(' '):
                 newOther = 'o-'
-                newOther += re.sub(r'[^a-zA-Z_]', '', y).lower()
+                newOther += re.sub(r'[^0-9a-zA-Z_]', '', y).lower()
+                if len(newOther) < 5:
+                    continue
                 newOther += ':'
                 try:
                     newOther += endArt[0]
@@ -118,7 +130,7 @@ class CreateTerms:
                 lineFull += lineArt[0]
                 lineFull += '</article>\n'
             except IndexError:
-                print('better luck next time you fucking pussy')
+                pass
                 
         except IndexError:
             try:
@@ -132,7 +144,7 @@ class CreateTerms:
                 lineFull += linePro[0]
                 lineFull += '</inproceedings>\n'
             except IndexError:
-                print('you wanna go')
+                pass
                 
         self.recsFile.write(lineFull)
         return
