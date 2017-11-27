@@ -193,16 +193,12 @@ class DataRetrieval:
         result = []
         cursor = self.years_db.cursor()
         item = cursor.set_range(min_year.encode())
-        first = True
         while item != None:
-            if first: # ignore first
-                first = False
-                item = cursor.next()
-                continue
-            if keep_index is None:
-                result.append(item)
-            else:
-                result.append(item[keep_index])
+            if str(item[0], 'utf-8') != min_year:
+                if keep_index is None:
+                    result.append(item)
+                else:
+                    result.append(item[keep_index])
             item = cursor.next()
         return result
 
@@ -213,7 +209,7 @@ class DataRetrieval:
         result = []
         cursor = self.years_db.cursor()
         item = cursor.first()
-        while int(item[0]) < int(max_year):
+        while int(str(item[0], 'utf-8')) < int(max_year):
             if keep_index is None:
                 result.append(item)
             else:
