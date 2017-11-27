@@ -65,7 +65,7 @@ class DataRetrieval:
             elif sign == '<':
                 result = self.search_year_until(year, keep_index=1)
             elif sign == ':':
-                result = search_db(self.years_db, year, keep_index=1)
+                result = search_db(self.years_db, year.encode(), keep_index=1)
             else:
                 raise ValueError('Sign not recognized')
             if global_result == None:
