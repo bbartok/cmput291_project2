@@ -97,11 +97,12 @@ class DataRetrieval:
 
 
         # Parse title conditions:
-        # TODO: BUG. Name cannot contains characters like &eacute
-        match1, query = find_and_remove(query, r'title *: *(\"*[\w \:_\-]+\")')
+        comp_match = re.findall(r'title *: *\"([\w \:_\-]+)\"', query)
+        match1, query = find_and_remove(query, r'title *: *(\"[\w \:_\-]+\")')
         match2, query = find_and_remove(query, r'title *: *([\w_\-]+)')
         for word in format_to_key(match1 + match2):
             result = self.search_title(word)
+            result = self.filter_order_match(result, comp_match+match2)
             if global_result == None:
                 global_result = set(result)
             else:
@@ -109,11 +110,11 @@ class DataRetrieval:
 
 
         # Parse author conditions:
-        # TODO: BUG. Name cannot contains characters like &eacute
         match1, query = find_and_remove(query, r'author *: *(\w+)')
         match2, query = find_and_remove(query, r'author *: *\"([\w \.]*)\"')
         for word in format_to_key(match1 + match2):
             result = self.search_author(word)
+            result = self.filter_order_match(result, match2+match1)
             if global_result == None:
                 global_result = set(result)
             else:
@@ -125,12 +126,14 @@ class DataRetrieval:
         match2, query = find_and_remove(query, r'other *: *\"([\w ]*)\"')
         for word in format_to_key(match1 + match2):
             result = self.search_other(word)
+            result = self.filter_order_match(result, match2+match1)
             if global_result == None:
                 global_result = set(result)
             else:
                 global_result &= set(result)
 
         # Parse conditions that does not have prefex, single word/phrase matching:
+        comp_match = re.findall(r'\"(.+)\"', query)
         match1, query = find_and_remove(query, r'(\".+\")') # with quotation
         query = re.sub(r'\w+:\w*', '', query) # remove unrecognized prefix
         single = query.split() + match1 # The remaining single words plus phrase in quotation
@@ -143,8 +146,11 @@ class DataRetrieval:
         keys = format_to_key(single_match)
         for word in keys:
             single_title = self.search_title(word)
+            single_title = self.filter_order_match(single_title, comp_match + single_match)
             single_author = self.search_author(word)
+            single_author = self.filter_order_match(single_author, comp_match + single_match)
             single_other = self.search_other(word)
+            single_other = self.filter_order_match(single_other, comp_match + single_match)
 
         # The result should be union of all categories intersect with the
         # previous results.
@@ -166,6 +172,17 @@ class DataRetrieval:
                 for key in global_result:
                     for record in search_db(self.recs_db, key, keep_index=1):
                         print(str(record, 'utf-8'))
+
+    def filter_order_match(self, search_result, match):
+        result = []
+        for key in search_result:
+            for record in search_db(self.recs_db, key, keep_index=1):
+                for phrase in match:
+                    # print(phrase, str(record, 'utf-8').lower())
+                    if phrase in str(record, 'utf-8').lower():
+                        # print('yes')
+                        result.append(key)
+        return result
 
     def search_year_from(self, min_year, keep_index=None):
         # Search year start from min_year
@@ -220,7 +237,7 @@ class DataRetrieval:
 if __name__ == '__main__':
     dbms = DataRetrieval()
     while True:
-        query = input('> ')
+        query = input('\033[94mQuery : \033[0m') # color prompt
         if dbms.parse(query) == 'exit':
             break
     dbms.close()
