@@ -102,9 +102,7 @@ class DataRetrieval:
         match2, query = find_and_remove(query, r'title *: *([\w_\-]+)')
         for word in format_to_key(match1 + match2):
             result = self.search_title(word)
-            print(result)
             result = self.filter_order_match(result, comp_match+match2)
-            print(result)
             if global_result == None:
                 global_result = set(result)
             else:
