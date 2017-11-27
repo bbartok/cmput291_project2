@@ -3,12 +3,14 @@ import re, sys
 class CreateTerms:
 
     def __init__(self):
-        self.readFile = open(sys.argv[1], 'r')
-        self.termsFile = open('terms.txt', 'w')
+        #initilizes terms.tx, years.txt, and recs.txt
+        self.readFile = open(sys.argv[1], 'r')       
+        self.termsFile = open('terms.txt', 'w')      
         self.yearFile = open('years.txt', 'w')
         self.recsFile = open('recs.txt', 'w')
 
     def makeFile(self):
+        #runs methods to create the files
         for line in self.readFile:
             self.title(line)
             self.others(line)
@@ -16,7 +18,7 @@ class CreateTerms:
             self.years(line)
             self.records(line)
 
-
+        #closes files
         self.readFile.close()
         self.termsFile.close()
         self.yearFile.close()
