@@ -179,7 +179,9 @@ class DataRetrieval:
             for record in search_db(self.recs_db, key, keep_index=1):
                 for phrase in match:
                     # print(phrase, str(record, 'utf-8').lower())
-                    if phrase in str(record, 'utf-8').lower():
+                    s = str(record, 'utf-8').lower()
+                    s = re.sub(r'[:\-\"]', ' ', s)
+                    if phrase in s:
                         # print('yes')
                         result.append(key)
         return result
