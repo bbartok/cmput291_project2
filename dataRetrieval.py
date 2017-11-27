@@ -3,6 +3,10 @@ from bsddb3 import db
 import re
 
 def search_db(db, expr, keep_index=None):
+    # Search key from the given database.
+    # expr: key
+    # keep_index: specify the return should contain key:0 or value:1, if
+    # None then key-value pair is returned.
     cursor = db.cursor()
     item = cursor.set(expr)
     result = []
@@ -22,6 +26,8 @@ def find_and_remove(query, regex):
 
 
 def format_to_key(match):
+    # Convert a list of phrases to keys by spliting each word and remove
+    # special characters.
     result = []
     for each in match:
         for word in each.split():
@@ -45,26 +51,34 @@ class DataRetrieval:
         self.years_db.open('ye.idx')
         cur = self.years_db.cursor()
 
+        # This specify the output should be key only or complete records.
+        # 'key' or 'full'
         self.output_format = 'key'
 
     def parse(self, query):
+        # The main parser for the database, the query is a string containing
+        # conditions defined in the project specification. This function will
+        # print all keys/records satisfy the conditions.
+
         query = query.lower()
         query = re.sub(r'\.', '', query)
 
         if query == 'exit':
             return 'exit'
 
+        # Setting output format:
         match = re.findall(r'output\s*=\s*(key|full)', query)
         if len(match) > 0:
             self.output_format = match[0]
             print('Output format set to \"{}\"'.format(self.output_format))
             return 
 
-        # Years:
-        # match = re.findall(r'year *([\<\>\:]) *([0-9]+)', query)
-        match, query = find_and_remove(query, r'year *([\<\>\:]) *([0-9]+)')
+        # This variable will be a set containing all records satisfy given
+        # conditions.
         global_result = None
-        # global_result = set()
+
+        # Parse year conditions:
+        match, query = find_and_remove(query, r'year *([\<\>\:]) *([0-9]+)')
         for sign, year in match:
             if sign == '>':
                 result = self.search_year_from(year, keep_index=1)
@@ -74,6 +88,7 @@ class DataRetrieval:
                 result = search_db(self.years_db, year.encode(), keep_index=1)
             else:
                 raise ValueError('Sign not recognized')
+            # Update global result using set operations:
             if global_result == None:
                 global_result = set(result)
             else:
@@ -81,14 +96,10 @@ class DataRetrieval:
 
 
 
-        # Title:
+        # Parse title conditions:
         # TODO: BUG. Name cannot contains characters like &eacute
-        # match = re.findall(r'title *: *\"*([\w \:_\-]*)\"', query)
-        # match += re.findall(r'title *: *([\w_\-]+)', query)
-        # match1, query = find_and_remove(query, r'title *: *\"*([\w \:_\-]*)\"')
         match1, query = find_and_remove(query, r'title *: *(\"*[\w \:_\-]+\")')
         match2, query = find_and_remove(query, r'title *: *([\w_\-]+)')
-        # match += single_match
         for word in format_to_key(match1 + match2):
             result = self.search_title(word)
             if global_result == None:
@@ -96,22 +107,11 @@ class DataRetrieval:
             else:
                 global_result &= set(result)
 
-        # for title in match1 + match2:
-            # for word in title.split():
-                # word = re.sub('[:\-]', '', word)
-                # result = search_db(self.terms_db, ('t-'+word).encode(), keep_index=1)
-                # if global_result == None:
-                    # global_result = set(result)
-                # else:
-                    # global_result &= set(result)
 
-        # Author:
+        # Parse author conditions:
         # TODO: BUG. Name cannot contains characters like &eacute
-        # match = re.findall(r'author *: *(\w+)', query)
-        # match += re.findall(r'author *: *\"([\w \.]*)\"', query)
         match1, query = find_and_remove(query, r'author *: *(\w+)')
         match2, query = find_and_remove(query, r'author *: *\"([\w \.]*)\"')
-        # match += single_match
         for word in format_to_key(match1 + match2):
             result = self.search_author(word)
             if global_result == None:
@@ -119,66 +119,35 @@ class DataRetrieval:
             else:
                 global_result &= set(result)
 
-        # for author in match1 + match2:
-            # for word in author.split():
-                # print(word)
-                # result = search_db(self.terms_db, ('a-'+word).encode(), keep_index=1)
-                # print('result=', result)
-                # if global_result == None:
-                    # global_result = set(result)
-                # else:
-                    # global_result &= set(result)
 
-        # Other:
-        # match = re.findall(r'other *: *(\w+)', query)
+        # Parse other conditions:
         match1, query = find_and_remove(query, r'other *: *(\w+)')
-        # match += re.findall(r'other *: *\"([\w ]*)\"', query)
         match2, query = find_and_remove(query, r'other *: *\"([\w ]*)\"')
-        # match += single_match
         for word in format_to_key(match1 + match2):
             result = self.search_other(word)
             if global_result == None:
                 global_result = set(result)
             else:
                 global_result &= set(result)
-        # for other in match:
-            # for word in other.split():
-                # word = re.sub('[:\-]', '', word)
-                # result = search_db(self.terms_db, ('o-'+word).encode(), keep_index=1)
-                # if global_result == None:
-                    # global_result = set(result)
-                # else:
-                    # global_result &= set(result)
 
-        # No prefex:
-        # TODO: not finished
-        # match = re.findall(r' (\w+) ', query)
-        # match += re.findall(r'(\w+)', query)
-        # match += re.findall(r'\"([\w ]*)\"', query)
-        # single_match = match
-        # single = re.sub(r'output\s*=\s*(key|full)', '', query)
-        # single = re.sub(r'year *([\<\>\:]) *([0-9]+)', '', single)
-        # single = re.sub(r'title *: *\"*([\w \:_\-]*)\"', '', single)
-        # single = re.sub(r'title *: *([\w_\-]+)', '', single)
-        # single = re.sub(r'author *: *(\w+)', '', single)
-        # single = re.sub(r'author *: *\"([\w \.]*)\"', '', single)
-        # single = re.sub(r'other *: *(\w+)', '', single)
-        # single = re.sub(r'other *: *\"([\w ]*)\"', '', single)
-        # single = single.split()
-        match1, query = find_and_remove(query, r'(\".+\")')
-        query = re.sub(r'\w+:\w*', '', query)
-        single = query.split() + match1
+        # Parse conditions that does not have prefex, single word/phrase matching:
+        match1, query = find_and_remove(query, r'(\".+\")') # with quotation
+        query = re.sub(r'\w+:\w*', '', query) # remove unrecognized prefix
+        single = query.split() + match1 # The remaining single words plus phrase in quotation
         single_match = []
         for each in single:
             if ':' not in each:
                 single_match.append(each)
 
+        # Search from all terms:
         keys = format_to_key(single_match)
         for word in keys:
             single_title = self.search_title(word)
             single_author = self.search_author(word)
             single_other = self.search_other(word)
 
+        # The result should be union of all categories intersect with the
+        # previous results.
         if len(keys) > 0:
             single_result = set(single_title) | set(single_author) | set(single_other)
             if global_result == None:
@@ -186,7 +155,7 @@ class DataRetrieval:
             else:
                 global_result &= single_result
 
-
+        # Print the result:
         if global_result is None:
             print('Invalid syntax')
         else:
@@ -199,6 +168,9 @@ class DataRetrieval:
                         print(str(record, 'utf-8'))
 
     def search_year_from(self, min_year, keep_index=None):
+        # Search year start from min_year
+        # keep_index: specify the return should contain key:0 or value:1, if
+        # None then key-value pair is returned.
         result = []
         cursor = self.years_db.cursor()
         item = cursor.set_range(min_year.encode())
@@ -211,6 +183,9 @@ class DataRetrieval:
         return result
 
     def search_year_until(self, max_year, keep_index=None):
+        # Search year end with max_year
+        # keep_index: specify the return should contain key:0 or value:1, if
+        # None then key-value pair is returned.
         result = []
         cursor = self.years_db.cursor()
         item = cursor.first()
@@ -223,12 +198,18 @@ class DataRetrieval:
         return result
 
     def search_title(self, word):
+        # Search title
+        # word: key
         return search_db(self.terms_db, ('t-'+word).encode(), keep_index=1)
 
     def search_author(self, word):
+        # Search author
+        # word: key
         return search_db(self.terms_db, ('a-'+word).encode(), keep_index=1)
 
     def search_other(self, word):
+        # Search other
+        # word: key
         return search_db(self.terms_db, ('o-'+word).encode(), keep_index=1)
 
     def close(self):
