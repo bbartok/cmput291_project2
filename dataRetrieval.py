@@ -102,7 +102,9 @@ class DataRetrieval:
         match2, query = find_and_remove(query, r'title *: *([\w_\-]+)')
         for word in format_to_key(match1 + match2):
             result = self.search_title(word)
+            print(result)
             result = self.filter_order_match(result, comp_match+match2)
+            print(result)
             if global_result == None:
                 global_result = set(result)
             else:
@@ -143,6 +145,9 @@ class DataRetrieval:
                 single_match.append(each)
 
         # Search from all terms:
+        title_set = None
+        author_set = None
+        other_set = None
         keys = format_to_key(single_match)
         for word in keys:
             single_title = self.search_title(word)
@@ -151,11 +156,24 @@ class DataRetrieval:
             single_author = self.filter_order_match(single_author, comp_match + single_match)
             single_other = self.search_other(word)
             single_other = self.filter_order_match(single_other, comp_match + single_match)
+            if title_set is None:
+                title_set = set(single_title)
+            else:
+                title_set &= set(single_title)
+            if author_set is None:
+                author_set = set(single_author)
+            else:
+                author_set &= set(single_author)
+            if other_set is None:
+                other_set = set(single_other)
+            else:
+                other_set &= set(single_other)
 
         # The result should be union of all categories intersect with the
         # previous results.
         if len(keys) > 0:
-            single_result = set(single_title) | set(single_author) | set(single_other)
+            # single_result = set(single_title) | set(single_author) | set(single_other)
+            single_result = title_set | author_set | other_set
             if global_result == None:
                 global_result = single_result
             else:
