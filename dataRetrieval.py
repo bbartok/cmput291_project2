@@ -174,6 +174,7 @@ class DataRetrieval:
                         print(str(record, 'utf-8'))
 
     def filter_order_match(self, search_result, match):
+        # Filter in-order matches.
         result = []
         for key in search_result:
             for record in search_db(self.recs_db, key, keep_index=1):
