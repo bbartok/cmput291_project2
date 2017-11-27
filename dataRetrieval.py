@@ -28,10 +28,6 @@ class DataRetrieval:
         self.years_db.set_flags(db.DB_DUP)
         self.years_db.open('ye.idx')
         cur = self.years_db.cursor()
-        # item = cur.first()
-        # while item != None:
-            # print(item)
-            # item = cur.next()
 
         self.output_format = 'key'
 
@@ -47,13 +43,6 @@ class DataRetrieval:
             self.output_format = match[0]
             print('Output format set to \"{}\"'.format(self.output_format))
             return 
-
-        # match = re.findall(r'title\s*:\s*(\w+)', query)
-        # if len(match) > 0:
-            # kwd = match[0]
-            # self.f1_search_title(kwd)
-            # return
-
 
         # Years:
         match = re.findall(r'year *([\<\>\:]) *([0-9]+)', query)
@@ -156,35 +145,6 @@ class DataRetrieval:
                 result.append(item[keep_index])
             item = cursor.next()
         return result
-
-    # def search_author(self, author, keep_index=None):
-        # result = []
-        # cursor = self.years_db.cursor()
-        # item = cursor.first()
-        # while item != None:
-            # match = re.findall(r'<author>([\w ]+)</author>', str(item[1], 'utf-8'))
-            # if len(match) > 0:
-                # if keep_index is None:
-                    # result.append(item)
-                # else:
-                    # result.append(item[keep_index])
-        # return result
-
-    def f1_search_title(self, kwd):
-        """
-        Function 1: search for title matchings
-        """
-        result = search_db(self.terms_db, ('t-' + kwd).encode())
-        if self.output_format is 'key':
-            for _, key in result:
-                print(str(key, 'utf-8'))
-
-        elif self.output_format == 'full':
-            for _, key in result:
-                records = search_db(self.recs_db, key)
-                for _, rec in records:
-                    print(str(rec, 'utf-8'))
-
 
     def close(self):
         self.recs_db.close()
